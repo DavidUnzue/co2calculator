@@ -1,22 +1,30 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiQuery } from '@nestjs/swagger';
 import { RoutesService } from './routes.service';
-import { Route } from './interfaces/route.interface';
+import { Route } from './entities/route.entity';
 
+@ApiTags('routes')
 @Controller('routes')
 export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 
+  @ApiQuery({
+    name: 'origin',
+    type: String,
+    required: false,
+    description: 'IATA code of origin place',
+  })
+  @ApiQuery({
+    name: 'destination',
+    type: String,
+    required: false,
+    description: 'IATA code of destination place',
+  })
   @Get()
-  async getRoutes(@Query() query): Promise<Route[]> {
-    if (Object.keys(query).length > 0) {
-      return this.routesService.findByFilter(query);
-    }
-    return this.routesService.findAll();
-  }
-
-  @Get(':id')
-  async getRoute(@Param('id') routeId: string): Promise<Route> {
-    const route = await this.routesService.findOne(routeId);
-    return route;
+  async getRoutes(
+    @Query() query: { origin: string; destination: string },
+  ): Promise<Route[]> {
+    const routes = await this.routesService.getRoutes(query);
+    return routes;
   }
 }

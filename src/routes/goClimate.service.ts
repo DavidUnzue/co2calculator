@@ -1,15 +1,17 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import fetch, { RequestInit } from 'node-fetch';
+import config from '../config';
 
-class Api {
+@Injectable()
+export class GoClimateService {
   private url: URL;
   private headers: {};
   private defaultOptions: {};
 
   constructor() {
-    this.url = new URL(`${process.env.GOCLIMATE_API_ROOT}`);
+    this.url = new URL(`${config.goclimate_api_root}`);
     // send goclimate API Key for authentication as Basic Auth header
-    const auth = Buffer.from(process.env.GOCLIMATE_API_KEY + ':', 'utf-8');
+    const auth = Buffer.from(config.goclimate_api_key + ':', 'utf-8');
     this.headers = {
       Authorization: `Basic ${auth.toString('base64')}`,
     };
@@ -19,7 +21,7 @@ class Api {
     };
   }
 
-  async get(
+  async getFootprint(
     {
       origin,
       destination,
@@ -43,13 +45,12 @@ class Api {
         ...this.defaultOptions,
         ...options,
       });
-      const json = await response.json();
-      return json;
+      if (!response.ok) {
+        throw new HttpException('Bad request', response.status);
+      }
+      return response.json();
     } catch (e) {
       throw new HttpException(e, 400);
     }
   }
 }
-
-const api = new Api();
-export default api;

@@ -1,40 +1,30 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+# CO2e calculator API
 
-[travis-image]: https://api.travis-ci.org/nestjs/nest.svg?branch=master
-[travis-url]: https://travis-ci.org/nestjs/nest
-[linux-image]: https://img.shields.io/travis/nestjs/nest/master.svg?label=linux
-[linux-url]: https://travis-ci.org/nestjs/nest
-  
-  <p align="center">A progressive <a href="http://nodejs.org" target="blank">Node.js</a> framework for building efficient and scalable server-side applications, heavily inspired by <a href="https://angular.io" target="blank">Angular</a>.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore"><img src="https://img.shields.io/npm/dm/@nestjs/core.svg" alt="NPM Downloads" /></a>
-<a href="https://travis-ci.org/nestjs/nest"><img src="https://api.travis-ci.org/nestjs/nest.svg?branch=master" alt="Travis" /></a>
-<a href="https://travis-ci.org/nestjs/nest"><img src="https://img.shields.io/travis/nestjs/nest/master.svg?label=linux" alt="Linux" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#5" alt="Coverage" /></a>
-<a href="https://gitter.im/nestjs/nestjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=body_badge"><img src="https://badges.gitter.im/nestjs/nestjs.svg" alt="Gitter" /></a>
-<a href="https://opencollective.com/nest#backer"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec"><img src="https://img.shields.io/badge/Donate-PayPal-dc3d53.svg"/></a>
-  <a href="https://twitter.com/nestframework"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Setup and configuration
 
-## Description
+### Installation
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+You will need Node.js (tested with v14.4.0) installed in your host.
 
-## Installation
+Install dependencies:
 
 ```bash
 $ npm install
 ```
 
-## Running the app
+### Environment variables
+
+The project uses [dotenv](https://www.npmjs.com/package/dotenv) to load environment variables stored in an `.env` file. Following information is defined here:
+
+- Host and port where the app should run
+- GoClimate API URL and API token
+- API token to secure HTTP requests from clients
+
+The project includes a file called `.env.sample` that serves as a template for that. Just rename this file into `.env` and fill in the missing information.
+
+## Start the application
+
+Start dev server:
 
 ```bash
 # development
@@ -42,34 +32,131 @@ $ npm run start
 
 # watch mode
 $ npm run start:dev
-
-# production mode
-$ npm run start:prod
 ```
 
-## Test
+The API server will run under `http://localhost:7000`.
+
+## Routes and footprints
+
+When retrieving the CO2e footprint for a journey (from origin to destination), the API will responde with a one-way (!) route (with corresponding footprint) for each available vehicle (car, train, plane).
+
+These routes are hard-coded in the app for the vehicles "car" and "train". The distances (km) for a specific route are the same for both vehicles. The footprint is then calculated on the fly based on the distance and [general emission values from "Umweltbundesamt"](https://www.umweltbundesamt.de/bild/vergleich-der-durchschnittlichen-emissionen-0).
+
+The footprint for the vehicle "plane" is retrieved on the fly from the [GoCLimate API](https://api.goclimate.com/docs).
+
+## API Endpoints
+
+Every request must send a custom Header called `Api-Token` with the corresponding token (see `.env` file) for authorization.
+
+The API is read-only at the moment, so only the `HTTP GET` method is allowed.
+
+**`/places`**  
+Allowed HTTP methods: `GET`
+
+Retrieve the possible origins and destinations for a route. Places are airports within Germany and identified by the IATA code.
+
+The endpoint returns a list of place entities:
+
+```
+[
+    {
+        "id": "FRA",
+        "label": "Frankfurt Airport",
+        "lat": "50.037919",
+        "long": "8.562045"
+    },
+    {
+        "id": "MUC",
+        "label": "Munich Airport",
+        "lat": "48.353747",
+        "long": "11.774993"
+    },
+    ...
+]
+```
+
+**`/places/:id`**  
+Allowed HTTP methods: `GET`
+
+Retrieve the information for a single route by its id (IATA code, case sensitiv).
+
+**`/routes`**  
+Allowed HTTP methods: `GET`
+
+Retrieve a list of routes (from origin to destination) with their corresponding CO2e footprints. You have to pass query parameters for origin and destination using IATA codes.
+
+```
+?origin=[ORIGIN_IATA]&destination=[DESTINATION_IATA]
+```
+
+The endpoint returns a list of route entities with footprints:
+
+```
+[
+    {
+        "origin": "TXL",
+        "destination": "MUC",
+        "vehicle": "car",
+        "footprint": 84
+    },
+    {
+        "origin": "TXL",
+        "destination": "MUC",
+        "vehicle": "train",
+        "footprint": 18
+    },
+    ...
+]
+```
+
+### Examples
+
+You can access the API either by using the React client as described in the client's repository README. Or you can use a client like `curl` or `Postman`:
+
+#### Get all places
+
+`GET http://localhost:7000/places`
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+curl --request GET 'http://localhost:7000/places' \
+--header 'Api-Token: 123456789'
 ```
 
-## Support
+#### Get a single place
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+`GET http://localhost:7000/places/FRA`
 
-## Stay in touch
+```bash
+curl --request GET 'http://localhost:7000/places/FRA' \
+--header 'Api-Token: 123456789'
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### Get routes by origin and destination
 
-## License
+`GET http://localhost:7000/routes?origin=FRA&destination=TXL`
 
-  Nest is [MIT licensed](LICENSE).
+```bash
+curl --request GET 'http://localhost:7000/routes?origin=FRA&destination=TXL' \
+--header 'Api-Token: 123456789'
+```
+
+## Tests
+
+I wrote some unit and e2e tests. To run them:
+
+Unit tests:
+
+```bash
+npm test
+```
+
+e2e tests:
+
+```bash
+npm run test:e2e
+```
+
+## Author
+
+David Unzué  
+[davidunzue.com](https://davidunzue.com)

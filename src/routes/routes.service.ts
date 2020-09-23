@@ -1,12 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { Route } from './interfaces/route.interface';
-import { Footprint } from './interfaces/footprint.interface';
-import { vehicles, routes } from '../mocks';
-import goClimate from './goClimate';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { Route } from './entities/route.entity';
+import { vehicles, routes } from '../mocks/data.mock';
+import { GoClimateService } from './goClimate.service';
 
 const calculateFootprint = (distance: number, vehicle: string) => {
   const emissions = vehicles[vehicle].emissions || 0;
@@ -15,19 +10,14 @@ const calculateFootprint = (distance: number, vehicle: string) => {
 
 @Injectable()
 export class RoutesService {
+  constructor(private readonly goClimate: GoClimateService) {}
+
   private readonly routes: Route[] = routes;
-  private footprints: Footprint[] = [];
 
-  findAll(): Promise<Route[]> {
-    return new Promise(resolve => {
-      resolve(this.routes);
-    });
-  }
-
-  async findByFilter(query: {
+  async getRoutes(query: {
     origin: string;
     destination: string;
-  }): Promise<any> {
+  }): Promise<Route[]> {
     // origin and destination required
     let { origin, destination } = query;
     if (!origin || !destination) {
@@ -40,8 +30,8 @@ export class RoutesService {
         (route.origin === destination && route.destination === origin),
     );
 
-    // create footprints for eachof th routes
-    const footprints: Footprint[] = selectedRoutes.map(route => {
+    // append footprints to each of the routes
+    const routes: Route[] = selectedRoutes.map(route => {
       const { vehicle, distance } = route;
       return {
         origin,
@@ -51,10 +41,14 @@ export class RoutesService {
       };
     });
 
+    // create the plane root and retrieve footprint from GoCLimate
     try {
-      const goClimateData = await goClimate.get({ origin, destination });
+      const goClimateData = await this.goClimate.getFootprint({
+        origin,
+        destination,
+      });
       const flightFootprint = goClimateData.footprint || 0;
-      footprints.push({
+      routes.push({
         origin,
         destination,
         vehicle: 'plane',
@@ -62,19 +56,10 @@ export class RoutesService {
       });
     } catch (e) {
       // could not reach goclimate API
+      // response will not fail, but it won't contain the footprint for the plane route
       console.log(e);
     }
 
-    return footprints;
-  }
-
-  findOne(routeId: string): Promise<Route> {
-    return new Promise(resolve => {
-      const route = this.routes.find(route => route.id === Number(routeId));
-      if (!route) {
-        throw new NotFoundException('Route does not exist');
-      }
-      resolve(route);
-    });
+    return routes;
   }
 }

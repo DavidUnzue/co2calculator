@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Place } from './interfaces/place.interface';
-import { places } from '../mocks';
+import { Place } from './entities/place.entity';
+import { places } from '../mocks/data.mock';
 
 @Injectable()
 export class PlacesService {
