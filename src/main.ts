@@ -9,10 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // allow clients to make request from other hosts
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://davidunzue.com/co2calculator-client/',
-    ],
+    origin: ['http://localhost:3000', 'http://davidunzue.com'],
   });
 
   const options = new DocumentBuilder()
