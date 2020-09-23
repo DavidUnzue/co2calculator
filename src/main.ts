@@ -16,7 +16,9 @@ async function bootstrap() {
     .setTitle('CO2 calculator')
     .setDescription('Calculate the CO2e footprint of your next journey')
     .setVersion('1.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
+
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
 
