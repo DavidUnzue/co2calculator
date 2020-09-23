@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOkResponse,
@@ -7,12 +7,14 @@ import {
 } from '@nestjs/swagger';
 import { PlacesService } from './places.service';
 import { Place } from './entities/place.entity';
+import { BearerAuthGuard } from '../auth/bearer-auth.guard';
 
 @ApiTags('places')
 @Controller('places')
 export class PlacesController {
   constructor(private readonly placesService: PlacesService) {}
 
+  @UseGuards(BearerAuthGuard)
   @Get()
   async getPlaces(): Promise<Place[]> {
     return this.placesService.findAll();
