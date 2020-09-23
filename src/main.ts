@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // allow clients to make request from other hosts
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://davidunzue.com'],
+    origin: ['http://localhost:3000', 'https://davidunzue.com'],
   });
 
   const options = new DocumentBuilder()
