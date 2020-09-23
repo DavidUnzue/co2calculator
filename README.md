@@ -50,6 +50,9 @@ Every request must send a custom Header called `Api-Token` with the correspondin
 
 The API is read-only at the moment, so only the `HTTP GET` method is allowed.
 
+**`/api`**
+OpenApi/Swagger documentation.
+
 **`/places`**  
 Allowed HTTP methods: `GET`
 
@@ -111,7 +114,11 @@ The endpoint returns a list of route entities with footprints:
 
 ### Examples
 
-You can access the API either by using the React client as described in the client's repository README. Or you can use a client like `curl` or `Postman`:
+You can access the API either by:
+
+- using the React client as described in the client's repository README
+- using the OpenApi/Swagger documentacion under the `/api` endpoint
+- you can use a client like `curl` or `Postman`
 
 #### Get all places
 
